@@ -1,6 +1,6 @@
 ALTER TABLE db_usuario.usuario
-ADD COLUMN id_rol BIGINT NOT NULL,
-ADD COLUMN id_estado_usuario BIGINT NOT NULL;
+ADD COLUMN id_rol BIGINT,
+ADD COLUMN id_estado_usuario BIGINT;
 
 ALTER TABLE db_usuario.usuario
 ADD CONSTRAINT fk_usuario_rol
