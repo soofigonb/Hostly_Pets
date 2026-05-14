@@ -1,13 +1,13 @@
-INSERT INTO bd_propiedades.tipo_mascota (nombre_tipo_mascota) VALUES ('Perro');
-INSERT INTO bd_propiedades.tipo_mascota (nombre_tipo_mascota) VALUES ('Gato');
-INSERT INTO bd_propiedades.tipo_mascota (nombre_tipo_mascota) VALUES ('Conejo');
-INSERT INTO bd_propiedades.tipo_mascota (nombre_tipo_mascota) VALUES ('Perro y gato');
+INSERT INTO db_propiedades.tipo_mascota (nombre_tipo_mascota) VALUES ('Perro');
+INSERT INTO db_propiedades.tipo_mascota (nombre_tipo_mascota) VALUES ('Gato');
+INSERT INTO db_propiedades.tipo_mascota (nombre_tipo_mascota) VALUES ('Conejo');
+INSERT INTO db_propiedades.tipo_mascota (nombre_tipo_mascota) VALUES ('Perro y gato');
 
-INSERT INTO bd_propiedades.tamano_mascota (nombre_tamano_mascota) VALUES ('Pequeño');
-INSERT INTO bd_propiedades.tamano_mascota (nombre_tamano_mascota) VALUES ('Mediano');
-INSERT INTO bd_propiedades.tamano_mascota (nombre_tamano_mascota) VALUES ('Grande');
+INSERT INTO db_propiedades.tamano_mascota (nombre_tamano_mascota) VALUES ('Pequeño');
+INSERT INTO db_propiedades.tamano_mascota (nombre_tamano_mascota) VALUES ('Mediano');
+INSERT INTO db_propiedades.tamano_mascota (nombre_tamano_mascota) VALUES ('Grande');
 
-INSERT INTO bd_propiedades.propiedad (
+INSERT INTO db_propiedades.propiedad (
     id_anfitrion, titulo, descripcion, direccion, ciudad,
     precio_noche, tiene_patio, costo_extra_mascota, disponible,
     id_tipo_propiedad, id_tipo_mascota, id_tamano_mascota
@@ -19,7 +19,7 @@ INSERT INTO bd_propiedades.propiedad (
     1, 4, 3
 );
 
-INSERT INTO bd_propiedades.propiedad (
+INSERT INTO db_propiedades.propiedad (
     id_anfitrion, titulo, descripcion, direccion, ciudad,
     precio_noche, tiene_patio, costo_extra_mascota, disponible,
     id_tipo_propiedad, id_tipo_mascota, id_tamano_mascota
@@ -31,7 +31,7 @@ INSERT INTO bd_propiedades.propiedad (
     2, 1, 1
 );
 
-INSERT INTO bd_propiedades.propiedad (
+INSERT INTO db_propiedades.propiedad (
     id_anfitrion, titulo, descripcion, direccion, ciudad,
     precio_noche, tiene_patio, costo_extra_mascota, disponible,
     id_tipo_propiedad, id_tipo_mascota, id_tamano_mascota
