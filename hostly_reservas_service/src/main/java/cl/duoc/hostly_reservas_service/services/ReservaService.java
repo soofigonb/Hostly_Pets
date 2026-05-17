@@ -35,13 +35,13 @@ public class ReservaService {
     
     private static final Logger logger = LoggerFactory.getLogger(ReservaService.class);
 
+    /// Crea una nueva reserva validando que existan el usuario y la propiedad
+     
     public ReservaDTO crearReserva(ReservaDTO dto) {
         logger.info("Iniciando creación de reserva para Usuario ID: {} en Propiedad ID: {}", 
                     dto.getIdUsuario(), dto.getIdPropiedad());
 
-        
         // VALIDACIONES HTTP CON MICROSERVICIOS (OPENFEIGN)
-    
         
         // A. Validar si el usuario existe en el microservicio de usuarios
         try {
@@ -60,7 +60,6 @@ public class ReservaService {
             logger.error("Error Feign: La propiedad con ID {} no existe o el módulo está caído", dto.getIdPropiedad());
             throw new ResourceNotFoundException("No se puede crear la reserva: La propiedad con ID " + dto.getIdPropiedad() + " no existe.");
         }
-
 
         // 1. Convertir DTO a entidad
         Reserva reserva = reservaMapper.toEntity(dto);
@@ -96,11 +95,52 @@ public class ReservaService {
         return reservaMapper.toDTO(guardada);
     }
 
+   /// Busca una reserva por su ID y le inyecta los datos de los microservicios
+    
+    public ReservaDTO obtenerReservaPorId(Long id) {
+        logger.info("Buscando Reserva por ID: {}", id);
+        
+        Reserva reserva = reservaRepo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Reserva con ID " + id + " no encontrada"));
+                
+        ReservaDTO dto = reservaMapper.toDTO(reserva);
+        
+        // Adjuntamos la información extendida en tiempo real de forma segura
+        enriquecerReservaConFeign(dto);
+        
+        return dto;
+    }
 
+   ///Lista todas las reservas del sistema con sus datos vinculados
+     
     public List<ReservaDTO> obtenerTodas() {
         logger.info("Obteniendo listado completo de reservas");
+        
         return reservaRepo.findAll().stream()
                 .map(reservaMapper::toDTO)
+                .peek(this::enriquecerReservaConFeign) 
                 .collect(Collectors.toList());
+    }
+
+   // Método auxiliar privado para rellenar los datos de los micros 
+     
+    private void enriquecerReservaConFeign(ReservaDTO dto) {
+        // Trae datos del usuario de forma asíncrona/segura
+        try {
+            Object usuarioCompleto = usuarioClient.obtenerUsuarioPorId(dto.getIdUsuario());
+            dto.setUsuario(usuarioCompleto);
+        } catch (Exception e) {
+            logger.warn("No se pudieron cargar los datos del usuario para la reserva ID: {}. Detalles: {}", dto.getId(), e.getMessage());
+            dto.setUsuario(null); 
+        }
+
+        // Trae datos de la propiedad de forma segura
+        try {
+            Object propiedadCompleta = propiedadClient.obtenerPropiedadPorId(dto.getIdPropiedad());
+            dto.setPropiedad(propiedadCompleta);
+        } catch (Exception e) {
+            logger.warn("No se pudieron cargar los datos de la propiedad para la reserva ID: {}. Detalles: {}", dto.getId(), e.getMessage());
+            dto.setPropiedad(null);
+        }
     }
 }

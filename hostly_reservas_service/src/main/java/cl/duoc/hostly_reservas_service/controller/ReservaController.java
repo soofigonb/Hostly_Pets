@@ -17,11 +17,18 @@ public class ReservaController {
 
     private final ReservaService reservaService;
 
-    // Obtener todas las reservas
+    // Obtener todas las reservas 
     @GetMapping
     public ResponseEntity<List<ReservaDTO>> listarReservas() {
         List<ReservaDTO> reservas = reservaService.obtenerTodas();
         return ResponseEntity.ok(reservas); 
+    }
+
+    //Obtener una reserva por su ID (consultas detalladas)
+    @GetMapping("/{id}")
+    public ResponseEntity<ReservaDTO> obtenerPorId(@PathVariable Long id) {
+        ReservaDTO reserva = reservaService.obtenerReservaPorId(id);
+        return ResponseEntity.ok(reserva);
     }
 
     // Crear una nueva reserva
