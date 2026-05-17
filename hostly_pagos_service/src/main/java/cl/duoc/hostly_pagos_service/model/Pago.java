@@ -18,8 +18,9 @@ public class Pago {
     @Column(nullable = false)
     private Double monto;
 
-    @Column(name = "metodo_pago")
-    private String metodoPago;
+    @ManyToOne
+    @JoinColumn(name = "id_metodo_pago")
+    private MetodoPago metodoPago;
 
     @Column(name = "fecha_pago")
     private LocalDateTime fechaPago;

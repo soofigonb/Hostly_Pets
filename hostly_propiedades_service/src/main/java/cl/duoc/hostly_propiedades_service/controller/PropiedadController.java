@@ -32,6 +32,7 @@ import cl.duoc.hostly_propiedades_service.service.PropiedadService;
 
 // Lombok genera automáticamente el constructor con atributos final
 import lombok.RequiredArgsConstructor;
+import jakarta.validation.Valid;
 
 // Indica que esta clase será un controlador REST
 @RestController
@@ -87,7 +88,7 @@ public class PropiedadController {
     // Endpoint POST que crea una nueva propiedad
     @PostMapping("")
     public ResponseEntity<PropiedadResponseDTO> crearPropiedad(
-            @RequestBody PropiedadRequestDTO propiedadDTO) {
+            @Valid @RequestBody PropiedadRequestDTO propiedadDTO) {
 
         // Log informativo
         logger.info("Solicitud POST para crear propiedad");
@@ -106,7 +107,7 @@ public class PropiedadController {
     @PutMapping("/{id}")
     public ResponseEntity<PropiedadResponseDTO> actualizarPropiedad(
             @PathVariable Long id,
-            @RequestBody PropiedadRequestDTO propiedadDTO) {
+            @Valid @RequestBody PropiedadRequestDTO propiedadDTO) {
 
         // Log informativo
         logger.info("Solicitud PUT para actualizar propiedad con id {}", id);
