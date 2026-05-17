@@ -1,6 +1,7 @@
 package cl.duoc.hostly_reservas_service.dto;
 
 import cl.duoc.hostly_reservas_service.model.Reserva;
+import cl.duoc.hostly_reservas_service.model.DetalleReserva;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -26,6 +27,16 @@ public class ReservaMapper {
             dto.setNombreEstado(reserva.getEstado().getNombre());
         }
 
+        // Mapear DetalleReserva
+        if (reserva.getDetalle() != null) {
+            DetalleReservaDTO detalleDTO = new DetalleReservaDTO();
+            detalleDTO.setId(reserva.getDetalle().getId());
+            detalleDTO.setMontoBase(reserva.getDetalle().getMontoBase());
+            detalleDTO.setMontoMascota(reserva.getDetalle().getMontoMascota());
+            detalleDTO.setTotal(reserva.getDetalle().getTotal());
+            dto.setDetalle(detalleDTO);
+        }
+
         return dto;
     }
 
@@ -43,6 +54,17 @@ public class ReservaMapper {
         reserva.setTipoMascota(dto.getTipoMascota());
         reserva.setTamanoMascota(dto.getTamanoMascota());
         reserva.setTotalReserva(dto.getTotalReserva());
+
+        // Mapear DetalleReserva de vuelta
+        if (dto.getDetalle() != null) {
+            DetalleReserva det = new DetalleReserva();
+            det.setId(dto.getDetalle().getId());
+            det.setMontoBase(dto.getDetalle().getMontoBase());
+            det.setMontoMascota(dto.getDetalle().getMontoMascota());
+            det.setTotal(dto.getDetalle().getTotal());
+            det.setReserva(reserva);
+            reserva.setDetalle(det);
+        }
 
         return reserva;
     }

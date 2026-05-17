@@ -27,6 +27,7 @@ public class ReservaDTO {
     private Double totalReserva;
     private String nombreEstado; 
 
+    private DetalleReservaDTO detalle;
     
     private Object usuario;   
     private Object propiedad; 

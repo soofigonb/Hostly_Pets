@@ -3,10 +3,13 @@ package cl.duoc.hostly_reservas_service.services;
 import cl.duoc.hostly_reservas_service.client.PropiedadClient;
 import cl.duoc.hostly_reservas_service.client.UsuarioClient;
 import cl.duoc.hostly_reservas_service.dto.ReservaDTO;
+import cl.duoc.hostly_reservas_service.dto.PropiedadDTO;
 import cl.duoc.hostly_reservas_service.dto.ReservaMapper;
 import cl.duoc.hostly_reservas_service.exceptions.ResourceNotFoundException;
 import cl.duoc.hostly_reservas_service.model.Reserva;
+import cl.duoc.hostly_reservas_service.model.DetalleReserva;
 import cl.duoc.hostly_reservas_service.model.EstadoReserva;
+import java.math.BigDecimal;
 import cl.duoc.hostly_reservas_service.repository.ReservaRepository;
 import cl.duoc.hostly_reservas_service.repository.EstadoReservaRepository;
 import lombok.RequiredArgsConstructor;
@@ -53,9 +56,10 @@ public class ReservaService {
         }
 
         // B. Validar si la propiedad existe en el microservicio de propiedades 
+        PropiedadDTO propiedadValida = null;
         try {
             logger.info("Consultando existencia de la Propiedad ID: {} en módulo Propiedades...", dto.getIdPropiedad());
-            propiedadClient.obtenerPropiedadPorId(dto.getIdPropiedad());
+            propiedadValida = propiedadClient.obtenerPropiedadPorId(dto.getIdPropiedad());
         } catch (Exception e) {
             logger.error("Error Feign: La propiedad con ID {} no existe o el módulo está caído", dto.getIdPropiedad());
             throw new ResourceNotFoundException("No se puede crear la reserva: La propiedad con ID " + dto.getIdPropiedad() + " no existe.");
@@ -71,13 +75,31 @@ public class ReservaService {
             throw new RuntimeException("La fecha de fin debe ser posterior a la de inicio");
         }
 
-        // 3. Simulación de precios 
-        double precioNoche = 45000.0; 
+        // 3. Simulación y obtención de precios de la propiedad
+        double precioNoche = 45000.0;
         double cargoPorMascota = 10000.0;
-        
-        double total = (noches * precioNoche) + (reserva.getCantidadMascotas() * cargoPorMascota);
+        if (propiedadValida != null) {
+            if (propiedadValida.getPrecioNoche() != null) {
+                precioNoche = propiedadValida.getPrecioNoche();
+            }
+            if (propiedadValida.getCostoExtraMascota() != null) {
+                cargoPorMascota = propiedadValida.getCostoExtraMascota();
+            }
+        }
+
+        double totalBase = noches * precioNoche;
+        double totalMascota = reserva.getCantidadMascotas() * cargoPorMascota;
+        double total = totalBase + totalMascota;
         reserva.setTotalReserva(total);
         logger.info("Cálculo finalizado: {} noches. Total: ${}", noches, total);
+
+        // Crear e inyectar DetalleReserva
+        DetalleReserva detalle = new DetalleReserva();
+        detalle.setMontoBase(BigDecimal.valueOf(totalBase));
+        detalle.setMontoMascota(BigDecimal.valueOf(totalMascota));
+        detalle.setTotal(BigDecimal.valueOf(total));
+        detalle.setReserva(reserva);
+        reserva.setDetalle(detalle);
 
         // 4. Asignar Estado inicial PENDIENTE 
         EstadoReserva estadoInicial = estadoRepo.findById(1L)
@@ -120,6 +142,98 @@ public class ReservaService {
                 .map(reservaMapper::toDTO)
                 .peek(this::enriquecerReservaConFeign) 
                 .collect(Collectors.toList());
+    }
+
+    // 7. Actualizar una reserva existente
+    public ReservaDTO actualizarReserva(Long id, ReservaDTO dto) {
+        logger.info("Actualizando reserva con ID: {}", id);
+
+        Reserva reservaExistente = reservaRepo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Reserva con ID " + id + " no encontrada"));
+
+        // Validar si el usuario o la propiedad han cambiado y si existen remotamente
+        if (!reservaExistente.getIdUsuario().equals(dto.getIdUsuario())) {
+            try {
+                usuarioClient.obtenerUsuarioPorId(dto.getIdUsuario());
+                reservaExistente.setIdUsuario(dto.getIdUsuario());
+            } catch (Exception e) {
+                logger.error("Error Feign: El usuario con ID {} no existe o el módulo está caído", dto.getIdUsuario());
+                throw new ResourceNotFoundException("No se puede actualizar la reserva: El usuario con ID " + dto.getIdUsuario() + " no existe.");
+            }
+        }
+
+        PropiedadDTO propiedadValida = null;
+        if (!reservaExistente.getIdPropiedad().equals(dto.getIdPropiedad())) {
+            try {
+                propiedadValida = propiedadClient.obtenerPropiedadPorId(dto.getIdPropiedad());
+                reservaExistente.setIdPropiedad(dto.getIdPropiedad());
+            } catch (Exception e) {
+                logger.error("Error Feign: La propiedad con ID {} no existe o el módulo está caído", dto.getIdPropiedad());
+                throw new ResourceNotFoundException("No se puede actualizar la reserva: La propiedad con ID " + dto.getIdPropiedad() + " no existe.");
+            }
+        } else {
+            // Traer precios de la propiedad actual para recalcular
+            try {
+                propiedadValida = propiedadClient.obtenerPropiedadPorId(reservaExistente.getIdPropiedad());
+            } catch (Exception e) {
+                logger.warn("No se pudo obtener la propiedad vía Feign para recalcular precios: {}", e.getMessage());
+            }
+        }
+
+        reservaExistente.setFechaInicio(dto.getFechaInicio());
+        reservaExistente.setFechaFin(dto.getFechaFin());
+        reservaExistente.setCantidadMascotas(dto.getCantidadMascotas());
+        reservaExistente.setTipoMascota(dto.getTipoMascota());
+        reservaExistente.setTamanoMascota(dto.getTamanoMascota());
+
+        // Lógica de negocio: Cálculo de noches
+        long noches = ChronoUnit.DAYS.between(reservaExistente.getFechaInicio(), reservaExistente.getFechaFin());
+        if (noches <= 0) {
+            logger.error("Error en fechas: La reserva debe durar al menos 1 noche");
+            throw new RuntimeException("La fecha de fin debe ser posterior a la de inicio");
+        }
+
+        // Obtener precios dinámicos de la propiedad
+        double precioNoche = 45000.0;
+        double cargoPorMascota = 10000.0;
+        if (propiedadValida != null) {
+            if (propiedadValida.getPrecioNoche() != null) {
+                precioNoche = propiedadValida.getPrecioNoche();
+            }
+            if (propiedadValida.getCostoExtraMascota() != null) {
+                cargoPorMascota = propiedadValida.getCostoExtraMascota();
+            }
+        }
+
+        double totalBase = noches * precioNoche;
+        double totalMascota = reservaExistente.getCantidadMascotas() * cargoPorMascota;
+        double total = totalBase + totalMascota;
+        reservaExistente.setTotalReserva(total);
+
+        // Crear/Actualizar DetalleReserva
+        DetalleReserva detalle = reservaExistente.getDetalle();
+        if (detalle == null) {
+            detalle = new DetalleReserva();
+            detalle.setReserva(reservaExistente);
+        }
+        detalle.setMontoBase(BigDecimal.valueOf(totalBase));
+        detalle.setMontoMascota(BigDecimal.valueOf(totalMascota));
+        detalle.setTotal(BigDecimal.valueOf(total));
+        reservaExistente.setDetalle(detalle);
+
+        Reserva guardada = reservaRepo.save(reservaExistente);
+        logger.info("Reserva ID: {} actualizada con éxito", guardada.getId());
+
+        return reservaMapper.toDTO(guardada);
+    }
+
+    // 8. Eliminar una reserva
+    public void eliminarReserva(Long id) {
+        logger.warn("Eliminando reserva con ID: {}", id);
+        Reserva reserva = reservaRepo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Reserva con ID " + id + " no encontrada"));
+        reservaRepo.delete(reserva);
+        logger.info("Reserva con ID: {} eliminada exitosamente", id);
     }
 
    // Método auxiliar privado para rellenar los datos de los micros 

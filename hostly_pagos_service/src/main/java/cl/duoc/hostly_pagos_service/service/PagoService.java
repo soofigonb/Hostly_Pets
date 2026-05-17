@@ -11,6 +11,9 @@ import cl.duoc.hostly_pagos_service.repository.EstadoPagoRepository;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import cl.duoc.hostly_pagos_service.exceptions.ResourceNotFoundException;
+import cl.duoc.hostly_pagos_service.model.MetodoPago;
+import cl.duoc.hostly_pagos_service.repository.MetodoPagoRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,6 +29,7 @@ public class PagoService {
     private final EstadoPagoRepository estadoRepo;
     private final PagoMapper pagoMapper;
     private final ReservaClient reservaClient; 
+    private final MetodoPagoRepository metodoPagoRepo;
     
     private static final Logger logger = LoggerFactory.getLogger(PagoService.class);
 
@@ -65,6 +69,12 @@ public class PagoService {
         // Convertir DTO a entidad
         Pago pago = pagoMapper.toEntity(dto);
 
+        // Buscar y asignar el método de pago
+        String nombreMetodo = dto.getMetodoPago();
+        MetodoPago metodo = metodoPagoRepo.findByNombreIgnoreCase(nombreMetodo)
+                .orElseThrow(() -> new RuntimeException("El método de pago '" + nombreMetodo + "' no está registrado o no es válido"));
+        pago.setMetodoPago(metodo);
+
         // Asignar estado COMPLETADO (ID 2 en Supabase)
         EstadoPago estadoCompletado = estadoRepo.findById(2L)
                 .orElseThrow(() -> {
@@ -101,5 +111,47 @@ public class PagoService {
         return pagos.stream()
                 .map(pagoMapper::toDTO)
                 .collect(Collectors.toList());
+    }
+
+    /// Actualiza un pago existente///
+    public PagoDTO actualizarPago(Long id, PagoDTO dto) {
+        logger.info("Actualizando pago con ID: {}", id);
+
+        Pago pagoExistente = pagoRepo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Pago con ID " + id + " no encontrado"));
+
+        // Validar si la reserva cambió y existe remotamente
+        if (!pagoExistente.getIdReserva().equals(dto.getIdReserva())) {
+            try {
+                logger.info("Validando nueva Reserva ID: {} vía OpenFeign...", dto.getIdReserva());
+                reservaClient.obtenerReservaPorId(dto.getIdReserva());
+                pagoExistente.setIdReserva(dto.getIdReserva());
+            } catch (Exception e) {
+                logger.error("Error al validar reserva vía Feign o la reserva no existe. Detalles: {}", e.getMessage());
+                throw new RuntimeException("No se puede actualizar el pago: La reserva con ID " + dto.getIdReserva() + " no existe o el servicio no responde.");
+            }
+        }
+
+        pagoExistente.setMonto(dto.getMonto());
+        
+        if (dto.getMetodoPago() != null) {
+            MetodoPago metodo = metodoPagoRepo.findByNombreIgnoreCase(dto.getMetodoPago())
+                    .orElseThrow(() -> new RuntimeException("El método de pago '" + dto.getMetodoPago() + "' no es válido"));
+            pagoExistente.setMetodoPago(metodo);
+        }
+
+        Pago guardado = pagoRepo.save(pagoExistente);
+        logger.info("Pago con ID: {} actualizado exitosamente", guardado.getId());
+
+        return pagoMapper.toDTO(guardado);
+    }
+
+    /// Elimina físicamente un pago por su ID///
+    public void eliminarPago(Long id) {
+        logger.warn("Eliminando pago con ID: {}", id);
+        Pago pago = pagoRepo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Pago con ID " + id + " no encontrado"));
+        pagoRepo.delete(pago);
+        logger.info("Pago con ID: {} eliminado exitosamente", id);
     }
 }
