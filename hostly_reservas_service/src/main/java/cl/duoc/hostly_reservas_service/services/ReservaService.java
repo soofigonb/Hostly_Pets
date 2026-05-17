@@ -1,7 +1,10 @@
 package cl.duoc.hostly_reservas_service.services;
 
+import cl.duoc.hostly_reservas_service.client.PropiedadClient;
+import cl.duoc.hostly_reservas_service.client.UsuarioClient;
 import cl.duoc.hostly_reservas_service.dto.ReservaDTO;
 import cl.duoc.hostly_reservas_service.dto.ReservaMapper;
+import cl.duoc.hostly_reservas_service.exceptions.ResourceNotFoundException;
 import cl.duoc.hostly_reservas_service.model.Reserva;
 import cl.duoc.hostly_reservas_service.model.EstadoReserva;
 import cl.duoc.hostly_reservas_service.repository.ReservaRepository;
@@ -26,23 +29,50 @@ public class ReservaService {
     private final EstadoReservaRepository estadoRepo;
     private final ReservaMapper reservaMapper;
     
+    // NUEVOS CLIENTES OPENFEIGN
+    private final PropiedadClient propiedadClient;
+    private final UsuarioClient usuarioClient;
+    
     private static final Logger logger = LoggerFactory.getLogger(ReservaService.class);
 
     public ReservaDTO crearReserva(ReservaDTO dto) {
         logger.info("Iniciando creación de reserva para Usuario ID: {} en Propiedad ID: {}", 
                     dto.getIdUsuario(), dto.getIdPropiedad());
 
-        // 1. Convertir DTO a Entidad
+        
+        // VALIDACIONES HTTP CON MICROSERVICIOS (OPENFEIGN)
+    
+        
+        // A. Validar si el usuario existe en el microservicio de usuarios
+        try {
+            logger.info("Consultando existencia del Usuario ID: {} en módulo Usuarios...", dto.getIdUsuario());
+            usuarioClient.obtenerUsuarioPorId(dto.getIdUsuario());
+        } catch (Exception e) {
+            logger.error("Error Feign: El usuario con ID {} no existe o el módulo está caído", dto.getIdUsuario());
+            throw new ResourceNotFoundException("No se puede crear la reserva: El usuario con ID " + dto.getIdUsuario() + " no existe.");
+        }
+
+        // B. Validar si la propiedad existe en el microservicio de propiedades 
+        try {
+            logger.info("Consultando existencia de la Propiedad ID: {} en módulo Propiedades...", dto.getIdPropiedad());
+            propiedadClient.obtenerPropiedadPorId(dto.getIdPropiedad());
+        } catch (Exception e) {
+            logger.error("Error Feign: La propiedad con ID {} no existe o el módulo está caído", dto.getIdPropiedad());
+            throw new ResourceNotFoundException("No se puede crear la reserva: La propiedad con ID " + dto.getIdPropiedad() + " no existe.");
+        }
+
+
+        // 1. Convertir DTO a entidad
         Reserva reserva = reservaMapper.toEntity(dto);
 
-        // 2. Lógica de Negocio: Cálculo de noches
+        // 2. Lógica de negocio: Cálculo de noches
         long noches = ChronoUnit.DAYS.between(reserva.getFechaInicio(), reserva.getFechaFin());
         if (noches <= 0) {
             logger.error("Error en fechas: La reserva debe durar al menos 1 noche");
             throw new RuntimeException("La fecha de fin debe ser posterior a la de inicio");
         }
 
-        // 3. Simulación de Precios 
+        // 3. Simulación de precios 
         double precioNoche = 45000.0; 
         double cargoPorMascota = 10000.0;
         
@@ -62,7 +92,7 @@ public class ReservaService {
         Reserva guardada = reservaRepo.save(reserva);
         logger.info("Reserva guardada exitosamente con ID: {}", guardada.getId());
 
-        // 6. Retornar como DTO para el Controller
+        // 6. Retornar como DTO para el controller
         return reservaMapper.toDTO(guardada);
     }
 
