@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotBlank;
 
 //NotNull: se usa para validar que un dato no sea nulo
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
@@ -36,11 +37,13 @@ public class UsuarioDTO {
     //Valida que el teléfono no esté vacío y tenga máximo 20 caracteres
     @NotBlank(message = "El teléfono es obligatorio")
     @Size(max = 20, message = "El teléfono no puede superar los 20 caracteres")
+    @Pattern(regexp = "^\\+?[0-9]{8,15}$", message = "El teléfono debe contener solo números y opcionalmente un prefijo '+'")
     private String telefono;
 
     //Valida que la contraseña no esté vacía y tenga máximo 255 caracteres
     @NotBlank(message = "La password es obligatoria")
     @Size(max = 255, message = "La password no puede superar los 255 caracteres")
+    @Pattern(regexp = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z]).{8,}$", message = "La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula y un número")
     private String password;
     
     //ID del rol asociado al usuario

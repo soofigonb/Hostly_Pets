@@ -11,4 +11,7 @@ public interface ReservaClient {
     // Feign nos traerá la reserva completa con su precio real
     @GetMapping("/{id}")
     ReservaDTO obtenerReservaPorId(@PathVariable("id") Long id);
+
+    @org.springframework.web.bind.annotation.PutMapping("/{id}/confirmar")
+    void confirmarReserva(@PathVariable("id") Long id);
 }

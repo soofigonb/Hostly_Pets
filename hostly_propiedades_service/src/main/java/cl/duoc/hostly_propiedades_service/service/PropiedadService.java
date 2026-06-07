@@ -18,6 +18,7 @@ import cl.duoc.hostly_propiedades_service.model.TipoPropiedad;
 import cl.duoc.hostly_propiedades_service.repository.PropiedadRepository;
 
 import jakarta.transaction.Transactional;
+import feign.FeignException;
 
 import lombok.RequiredArgsConstructor;
 
@@ -75,17 +76,23 @@ public class PropiedadService {
                 propiedadDTO.getIdAnfitrion());
 
         // Verifica si el anfitrión existe en usuarios-service
-        UsuarioResponseDTO usuario =
-                usuarioClient.obtenerUsuarioPorId(
-                        propiedadDTO.getIdAnfitrion());
+        UsuarioResponseDTO usuario = null;
+        try {
+            usuario = usuarioClient.obtenerUsuarioPorId(propiedadDTO.getIdAnfitrion());
+        } catch (FeignException.NotFound e) {
+            logger.error("Anfitrión no encontrado con id {}", propiedadDTO.getIdAnfitrion());
+            throw new IllegalArgumentException("Anfitrión no encontrado");
+        }
 
         // Si no existe, lanza excepción
         if (usuario == null) {
-
-            logger.error("Anfitrión no encontrado con id {}",
-                    propiedadDTO.getIdAnfitrion());
-
+            logger.error("Anfitrión no encontrado con id {}", propiedadDTO.getIdAnfitrion());
             throw new IllegalArgumentException("Anfitrión no encontrado");
+        }
+
+        if (usuario.getRol() == null || (!usuario.getRol().equalsIgnoreCase("Anfitrión") && !usuario.getRol().equalsIgnoreCase("Anfitrion"))) {
+            logger.error("El usuario {} no tiene rol de Anfitrión", usuario.getNombre());
+            throw new IllegalArgumentException("El usuario debe tener rol de Anfitrión para crear propiedades");
         }
 
         logger.info("Anfitrión encontrado: {}", usuario.getNombre());
@@ -117,7 +124,7 @@ public class PropiedadService {
         propiedad.setPrecioNoche(propiedadDTO.getPrecioNoche());
         propiedad.setTienePatio(propiedadDTO.getTienePatio());
         propiedad.setCostoExtraMascota(propiedadDTO.getCostoExtraMascota());
-        propiedad.setDisponible(propiedadDTO.getDisponible());
+        propiedad.setDisponible(true); // Estado por defecto al crear
 
         // Asigna relaciones
         propiedad.setTipoPropiedad(tipoPropiedad);
@@ -141,16 +148,22 @@ public class PropiedadService {
         Propiedad propiedad = obtenerPropiedadPorId(id);
 
         // Verifica anfitrión en usuarios-service
-        UsuarioResponseDTO usuario =
-                usuarioClient.obtenerUsuarioPorId(
-                        propiedadDTO.getIdAnfitrion());
+        UsuarioResponseDTO usuario = null;
+        try {
+            usuario = usuarioClient.obtenerUsuarioPorId(propiedadDTO.getIdAnfitrion());
+        } catch (FeignException.NotFound e) {
+            logger.error("Anfitrión no encontrado con id {}", propiedadDTO.getIdAnfitrion());
+            throw new IllegalArgumentException("Anfitrión no encontrado");
+        }
 
         if (usuario == null) {
-
-            logger.error("Anfitrión no encontrado con id {}",
-                    propiedadDTO.getIdAnfitrion());
-
+            logger.error("Anfitrión no encontrado con id {}", propiedadDTO.getIdAnfitrion());
             throw new IllegalArgumentException("Anfitrión no encontrado");
+        }
+
+        if (usuario.getRol() == null || (!usuario.getRol().equalsIgnoreCase("Anfitrión") && !usuario.getRol().equalsIgnoreCase("Anfitrion"))) {
+            logger.error("El usuario {} no tiene rol de Anfitrión", usuario.getNombre());
+            throw new IllegalArgumentException("El usuario debe tener rol de Anfitrión para actualizar propiedades");
         }
 
         logger.info("Anfitrión encontrado: {}", usuario.getNombre());
@@ -198,10 +211,12 @@ public class PropiedadService {
         // Busca propiedad
         Propiedad propiedad = obtenerPropiedadPorId(id);
 
-        // Elimina de la base de datos
-        propiedadRepository.delete(propiedad);
+        // TODO: Verificar con hostly_reservas_service si la propiedad tiene reservas activas
+        // Por ahora, aplicamos borrado lógico cambiando el estado
+        propiedad.setDisponible(false);
+        propiedadRepository.save(propiedad);
 
-        logger.info("Propiedad eliminada correctamente con id {}", id);
+        logger.info("Propiedad inhabilitada correctamente (borrado lógico) con id {}", id);
     }
 
     // Busca propiedades según ciudad
