@@ -1,13 +1,6 @@
 package cl.duoc.hostly_usuarios_service.controller;
 
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 
@@ -26,22 +19,32 @@ import cl.duoc.hostly_usuarios_service.dto.UsuarioDTO;
 import cl.duoc.hostly_usuarios_service.exceptions.RecursoNoEncontradoException;
 import cl.duoc.hostly_usuarios_service.service.UsuarioService;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.hamcrest.Matchers.hasSize;
+
 @WebMvcTest(UsuarioController.class)
 public class UsuarioControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
 
-    private ObjectMapper objectMapper = new ObjectMapper();
-
     @MockitoBean
     private UsuarioService usuarioService;
 
+    private ObjectMapper objectMapper = new ObjectMapper();
+
     @Test
     void whenObtenerTodosLosUsuarios_thenReturnOk() throws Exception {
+
         // GIVEN
         UsuarioDTO usuarioDTO = new UsuarioDTO();
         usuarioDTO.setIdUsuario(1L);
+
         List<UsuarioDTO> usuarios = List.of(usuarioDTO);
 
         // WHEN
@@ -56,37 +59,61 @@ public class UsuarioControllerTest {
 
     @Test
     void whenObtenerUsuarioPorId_thenReturnOk() throws Exception {
+
         // GIVEN
-        Long id = 1L;
+        Long idUsuario = 1L;
+
         UsuarioDTO usuarioDTO = new UsuarioDTO();
-        usuarioDTO.setIdUsuario(id);
+        usuarioDTO.setIdUsuario(idUsuario);
         usuarioDTO.setEmail("test@test.com");
 
         // WHEN
-        when(usuarioService.obtenerUsuarioPorId(id)).thenReturn(usuarioDTO);
+        when(usuarioService.obtenerUsuarioPorId(idUsuario)).thenReturn(usuarioDTO);
 
         // THEN
-        mockMvc.perform(get("/api/v1/usuarios/{idUsuario}", id))
+        mockMvc.perform(get("/api/v1/usuarios/{idUsuario}", idUsuario))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.idUsuario").value(id))
+                .andExpect(jsonPath("$.idUsuario").value(idUsuario))
                 .andExpect(jsonPath("$.email").value("test@test.com"));
     }
 
     @Test
     void whenObtenerUsuarioPorId_thenReturnNotFound() throws Exception {
+
         // GIVEN
-        Long id = 99L;
+        Long idUsuario = 99L;
 
         // WHEN
-        when(usuarioService.obtenerUsuarioPorId(id)).thenThrow(new RecursoNoEncontradoException("Usuario no encontrado"));
+        when(usuarioService.obtenerUsuarioPorId(idUsuario))
+                .thenThrow(new RecursoNoEncontradoException("Usuario no encontrado"));
 
         // THEN
-        mockMvc.perform(get("/api/v1/usuarios/{idUsuario}", id))
+        mockMvc.perform(get("/api/v1/usuarios/{idUsuario}", idUsuario))
                 .andExpect(status().isNotFound());
     }
 
     @Test
+    void whenObtenerUsuarioPorEmail_thenReturnOk() throws Exception {
+
+        // GIVEN
+        String email = "juan@test.com";
+
+        UsuarioDTO usuarioDTO = new UsuarioDTO();
+        usuarioDTO.setIdUsuario(1L);
+        usuarioDTO.setEmail(email);
+
+        // WHEN
+        when(usuarioService.obtenerUsuarioPorEmail(email)).thenReturn(usuarioDTO);
+
+        // THEN
+        mockMvc.perform(get("/api/v1/usuarios/email/{email}", email))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.email").value(email));
+    }
+
+    @Test
     void whenAgregarUsuario_thenReturnCreated() throws Exception {
+
         // GIVEN
         UsuarioDTO nuevoUsuario = new UsuarioDTO();
         nuevoUsuario.setNombre("Juan");
@@ -116,26 +143,31 @@ public class UsuarioControllerTest {
     }
 
     @Test
-    void whenObtenerUsuarioPorEmail_thenReturnOk() throws Exception {
+    void whenAgregarUsuarioConDatosInvalidos_thenReturnBadRequest() throws Exception {
+
         // GIVEN
-        String email = "juan@test.com";
-        UsuarioDTO usuarioDTO = new UsuarioDTO();
-        usuarioDTO.setIdUsuario(1L);
-        usuarioDTO.setEmail(email);
+        UsuarioDTO usuarioInvalido = new UsuarioDTO();
+        usuarioInvalido.setNombre("");
+        usuarioInvalido.setApellido("");
+        usuarioInvalido.setEmail("correo-malo");
+        usuarioInvalido.setTelefono("abc");
+        usuarioInvalido.setPassword("123");
+        usuarioInvalido.setIdRol(null);
+        usuarioInvalido.setIdEstadoUsuario(null);
 
-        // WHEN
-        when(usuarioService.obtenerUsuarioPorEmail(email)).thenReturn(usuarioDTO);
-
-        // THEN
-        mockMvc.perform(get("/api/v1/usuarios/email/{email}", email))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.email").value(email));
+        // WHEN AND THEN
+        mockMvc.perform(post("/api/v1/usuarios")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(usuarioInvalido)))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
     void whenActualizarUsuario_thenReturnOk() throws Exception {
+
         // GIVEN
-        Long id = 1L;
+        Long idUsuario = 1L;
+
         UsuarioDTO usuarioDTO = new UsuarioDTO();
         usuarioDTO.setNombre("Juan Modificado");
         usuarioDTO.setApellido("Perez");
@@ -146,14 +178,15 @@ public class UsuarioControllerTest {
         usuarioDTO.setIdEstadoUsuario(1L);
 
         UsuarioDTO usuarioActualizado = new UsuarioDTO();
-        usuarioActualizado.setIdUsuario(id);
+        usuarioActualizado.setIdUsuario(idUsuario);
         usuarioActualizado.setNombre("Juan Modificado");
 
         // WHEN
-        when(usuarioService.actualizarUsuario(eq(id), any(UsuarioDTO.class))).thenReturn(usuarioActualizado);
+        when(usuarioService.actualizarUsuario(eq(idUsuario), any(UsuarioDTO.class)))
+                .thenReturn(usuarioActualizado);
 
         // THEN
-        mockMvc.perform(put("/api/v1/usuarios/{idUsuario}", id)
+        mockMvc.perform(put("/api/v1/usuarios/{idUsuario}", idUsuario)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(usuarioDTO)))
                 .andExpect(status().isOk())
@@ -162,14 +195,15 @@ public class UsuarioControllerTest {
 
     @Test
     void whenEliminarUsuario_thenReturnNoContent() throws Exception {
+
         // GIVEN
-        Long id = 1L;
+        Long idUsuario = 1L;
 
         // WHEN
-        when(usuarioService.eliminarUsuario(id)).thenReturn(true);
+        when(usuarioService.eliminarUsuario(idUsuario)).thenReturn(true);
 
         // THEN
-        mockMvc.perform(delete("/api/v1/usuarios/{idUsuario}", id))
+        mockMvc.perform(delete("/api/v1/usuarios/{idUsuario}", idUsuario))
                 .andExpect(status().isNoContent());
     }
 }
