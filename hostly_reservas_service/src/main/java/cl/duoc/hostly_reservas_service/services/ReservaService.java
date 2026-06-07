@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import jakarta.transaction.Transactional;
 
 import java.time.temporal.ChronoUnit;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -63,6 +64,23 @@ public class ReservaService {
         } catch (Exception e) {
             logger.error("Error Feign: La propiedad con ID {} no existe o el módulo está caído", dto.getIdPropiedad());
             throw new ResourceNotFoundException("No se puede crear la reserva: La propiedad con ID " + dto.getIdPropiedad() + " no existe.");
+        }
+
+        if (propiedadValida != null && propiedadValida.getDisponible() != null && !propiedadValida.getDisponible()) {
+            logger.error("La propiedad con ID {} no está disponible", dto.getIdPropiedad());
+            throw new RuntimeException("No se puede crear la reserva: La propiedad no está actualmente disponible para arriendo.");
+        }
+
+        if (dto.getFechaInicio() != null && dto.getFechaInicio().isBefore(LocalDate.now())) {
+            throw new RuntimeException("La fecha de inicio de la reserva no puede ser en el pasado.");
+        }
+
+        List<Reserva> reservasActivas = reservaRepo.findByIdPropiedadAndEstadoIdNot(dto.getIdPropiedad(), 3L);
+        for (Reserva r : reservasActivas) {
+            if (!dto.getFechaInicio().isAfter(r.getFechaFin()) && !dto.getFechaFin().isBefore(r.getFechaInicio())) {
+                logger.error("Overbooking detectado en propiedad {} para las fechas {} a {}", dto.getIdPropiedad(), dto.getFechaInicio(), dto.getFechaFin());
+                throw new RuntimeException("La propiedad ya se encuentra reservada en las fechas seleccionadas.");
+            }
         }
 
         // 1. Convertir DTO a entidad
@@ -186,6 +204,16 @@ public class ReservaService {
         reservaExistente.setTipoMascota(dto.getTipoMascota());
         reservaExistente.setTamanoMascota(dto.getTamanoMascota());
 
+        // Validar sobreventa al actualizar
+        List<Reserva> reservasActivas = reservaRepo.findByIdPropiedadAndEstadoIdNot(reservaExistente.getIdPropiedad(), 3L);
+        for (Reserva r : reservasActivas) {
+            if (!r.getId().equals(id)) {
+                if (!reservaExistente.getFechaInicio().isAfter(r.getFechaFin()) && !reservaExistente.getFechaFin().isBefore(r.getFechaInicio())) {
+                    throw new RuntimeException("La propiedad ya se encuentra reservada en las nuevas fechas seleccionadas.");
+                }
+            }
+        }
+
         // Lógica de negocio: Cálculo de noches
         long noches = ChronoUnit.DAYS.between(reservaExistente.getFechaInicio(), reservaExistente.getFechaFin());
         if (noches <= 0) {
@@ -227,13 +255,33 @@ public class ReservaService {
         return reservaMapper.toDTO(guardada);
     }
 
-    // 8. Eliminar una reserva
+    // 8. Eliminar una reserva (Borrado Lógico)
     public void eliminarReserva(Long id) {
-        logger.warn("Eliminando reserva con ID: {}", id);
+        logger.warn("Cancelando reserva con ID: {}", id);
         Reserva reserva = reservaRepo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Reserva con ID " + id + " no encontrada"));
-        reservaRepo.delete(reserva);
-        logger.info("Reserva con ID: {} eliminada exitosamente", id);
+        
+        EstadoReserva estadoCancelada = estadoRepo.findById(3L)
+                .orElseThrow(() -> new RuntimeException("Estado CANCELADA (ID 3) no configurado en la BD"));
+                
+        reserva.setEstado(estadoCancelada);
+        reservaRepo.save(reserva);
+        
+        logger.info("Reserva con ID: {} cancelada exitosamente", id);
+    }
+
+    // 9. Confirmar una reserva
+    public void confirmarReserva(Long id) {
+        logger.info("Confirmando reserva con ID: {}", id);
+        Reserva reserva = reservaRepo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Reserva con ID " + id + " no encontrada"));
+
+        EstadoReserva estadoConfirmada = estadoRepo.findById(2L)
+                .orElseThrow(() -> new RuntimeException("Estado CONFIRMADA (ID 2) no configurado en la BD"));
+
+        reserva.setEstado(estadoConfirmada);
+        reservaRepo.save(reserva);
+        logger.info("Reserva con ID: {} confirmada exitosamente", id);
     }
 
    // Método auxiliar privado para rellenar los datos de los micros 

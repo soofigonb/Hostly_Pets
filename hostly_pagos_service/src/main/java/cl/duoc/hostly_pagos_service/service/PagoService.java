@@ -53,11 +53,25 @@ public class PagoService {
             throw new RuntimeException("No se puede procesar el pago: La reserva con ID " + dto.getIdReserva() + " no existe o el servicio no responde.");
         }
 
-        // 3. Viene el monto en el DTO de la reserva, lo usamos de forma automática
+        // 3. Validar si la reserva ya fue pagada exitosamente
+        if (pagoRepo.existsByIdReservaAndEstadoId(dto.getIdReserva(), 2L)) {
+            logger.error("Intento de pago duplicado para la Reserva ID: {}", dto.getIdReserva());
+            throw new RuntimeException("La reserva ya se encuentra pagada.");
+        }
 
-        if (reservaValida != null && reservaValida.getTotalReserva() != null) {
-            logger.info("Monto de la reserva obtenido automáticamente: ${}", reservaValida.getTotalReserva());
-            dto.setMonto(reservaValida.getTotalReserva());
+        // 4. Viene el monto en el DTO de la reserva, lo usamos de forma automática
+        if (reservaValida != null) {
+            // Verificar que la reserva esté en estado PENDIENTE (asumiendo que es su nombreEstado o similar,
+            // pero si no tenemos acceso seguro al nombre, al menos sabemos que no podemos cobrar una cancelada).
+            // Lo ideal es verificar si getNombreEstado() es "Pendiente" o "PENDIENTE".
+            if (reservaValida.getNombreEstado() != null && !reservaValida.getNombreEstado().equalsIgnoreCase("Pendiente")) {
+                throw new RuntimeException("No se puede pagar una reserva que no esté en estado PENDIENTE. Estado actual: " + reservaValida.getNombreEstado());
+            }
+
+            if (reservaValida.getTotalReserva() != null) {
+                logger.info("Monto de la reserva obtenido automáticamente: ${}", reservaValida.getTotalReserva());
+                dto.setMonto(reservaValida.getTotalReserva());
+            }
         }
 
         // Validar monto final por seguridad
@@ -87,6 +101,16 @@ public class PagoService {
         // Guardar
         Pago guardado = pagoRepo.save(pago);
         logger.info("Pago guardado exitosamente. ID Transacción: {}", guardado.getId());
+
+        // 5. Notificar a Reservas para cambiar el estado a CONFIRMADA
+        try {
+            reservaClient.confirmarReserva(dto.getIdReserva());
+            logger.info("Reserva ID: {} confirmada exitosamente tras el pago", dto.getIdReserva());
+        } catch (Exception e) {
+            logger.error("Error al notificar confirmación a la reserva ID: {}. Detalles: {}", dto.getIdReserva(), e.getMessage());
+            // No hacemos throw aquí para no revertir el pago exitoso, pero en un sistema real
+            // se encolaría en un mensaje Kafka o RabbitMQ para reintentos.
+        }
 
         return pagoMapper.toDTO(guardado);
     }
@@ -146,12 +170,17 @@ public class PagoService {
         return pagoMapper.toDTO(guardado);
     }
 
-    /// Elimina físicamente un pago por su ID///
+    /// Elimina un pago por su ID (Borrado Lógico)///
     public void eliminarPago(Long id) {
-        logger.warn("Eliminando pago con ID: {}", id);
+        logger.warn("Anulando pago con ID: {}", id);
         Pago pago = pagoRepo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Pago con ID " + id + " no encontrado"));
-        pagoRepo.delete(pago);
-        logger.info("Pago con ID: {} eliminado exitosamente", id);
+        
+        EstadoPago estadoAnulado = estadoRepo.findById(3L)
+                .orElseThrow(() -> new RuntimeException("Estado de pago ANULADO (ID 3) no configurado en la BD"));
+
+        pago.setEstado(estadoAnulado);
+        pagoRepo.save(pago);
+        logger.info("Pago con ID: {} anulado exitosamente", id);
     }
 }
