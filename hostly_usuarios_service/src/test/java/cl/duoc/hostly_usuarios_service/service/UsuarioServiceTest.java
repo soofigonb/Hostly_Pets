@@ -25,6 +25,7 @@ import cl.duoc.hostly_usuarios_service.exceptions.RecursoYaExisteException;
 import cl.duoc.hostly_usuarios_service.model.Usuario;
 import cl.duoc.hostly_usuarios_service.repository.UsuarioRepository;
 
+// Habilita el uso de anotaciones de Mockito (@Mock, @InjectMocks)
 @ExtendWith(MockitoExtension.class)
 public class UsuarioServiceTest {
 
@@ -36,7 +37,7 @@ public class UsuarioServiceTest {
     private UsuarioDTOMapper usuarioDTOMapper;
 
     // Servicio por probar
-    @InjectMocks
+    @InjectMocks // Inyecta los mocks definidos arriba en la instancia real del servicio
     private UsuarioService usuarioService;
 
     @Test
@@ -47,7 +48,7 @@ public class UsuarioServiceTest {
         Usuario usuario = new Usuario();
         usuario.setIdUsuario(idUsuario);
         usuario.setEmail("test@test.com");
-        
+
         UsuarioDTO usuarioDTO = new UsuarioDTO();
         usuarioDTO.setIdUsuario(idUsuario);
         usuarioDTO.setEmail("test@test.com");
@@ -55,7 +56,7 @@ public class UsuarioServiceTest {
         // WHEN
         when(usuarioRepo.findById(idUsuario)).thenReturn(Optional.of(usuario));
         when(usuarioDTOMapper.toDTO(usuario)).thenReturn(usuarioDTO);
-        
+
         UsuarioDTO resultado = usuarioService.obtenerUsuarioPorId(idUsuario);
 
         // THEN
@@ -150,7 +151,7 @@ public class UsuarioServiceTest {
         Usuario usuario = new Usuario();
         usuario.setIdUsuario(1L);
         List<Usuario> usuarios = List.of(usuario);
-        
+
         UsuarioDTO usuarioDTO = new UsuarioDTO();
         usuarioDTO.setIdUsuario(1L);
 
@@ -181,14 +182,14 @@ public class UsuarioServiceTest {
         String email = "test@test.com";
         Usuario usuario = new Usuario();
         usuario.setEmail(email);
-        
+
         UsuarioDTO usuarioDTO = new UsuarioDTO();
         usuarioDTO.setEmail(email);
 
         // WHEN
         when(usuarioRepo.findByEmail(email)).thenReturn(Optional.of(usuario));
         when(usuarioDTOMapper.toDTO(usuario)).thenReturn(usuarioDTO);
-        
+
         UsuarioDTO resultado = usuarioService.obtenerUsuarioPorEmail(email);
 
         // THEN
@@ -254,5 +255,19 @@ public class UsuarioServiceTest {
 
         // THEN
         assertThrows(RecursoYaExisteException.class, () -> usuarioService.actualizarUsuario(id, usuarioDTO));
+    }
+
+    @Test
+    void givenNonExistingIdUsuario_whenEliminarUsuario_thenThrowRecursoNoEncontradoException() {
+
+        // GIVEN
+        Long idUsuario = 99L;
+
+        // WHEN
+        when(usuarioRepo.existsById(idUsuario)).thenReturn(false);
+
+        // THEN
+        assertThrows(RecursoNoEncontradoException.class, () -> usuarioService.eliminarUsuario(idUsuario));
+        verify(usuarioRepo, atMostOnce()).existsById(idUsuario);
     }
 }
