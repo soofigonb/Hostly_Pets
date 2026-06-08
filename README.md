@@ -81,3 +81,24 @@ Hostly_Pets/
 ├── hostly-pagos-service
 │
 └── README.md
+```
+
+---
+
+## 🧪 Testing y Cobertura
+
+Pruebas unitarias desarrolladas con **JUnit 5** y **Mockito** (estructura `Given-When-Then`), validadas con **JaCoCo** para asegurar un mínimo de **80% de cobertura**.
+
+### Ejecutar Tests
+En la carpeta de cada microservicio, ejecuta:
+```bash
+mvn clean test
+mvn clean verify
+```
+*(Debe superar el 80% de cobertura para obtener un `BUILD SUCCESS`)*
+
+### Reporte de Cobertura
+Para ver el reporte visual, abre en tu navegador:
+```bash
+./target/site/jacoco/index.html
+```
