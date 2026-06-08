@@ -211,7 +211,6 @@ public class PropiedadService {
         // Busca propiedad
         Propiedad propiedad = obtenerPropiedadPorId(id);
 
-        // TODO: Verificar con hostly_reservas_service si la propiedad tiene reservas activas
         // Por ahora, aplicamos borrado lógico cambiando el estado
         propiedad.setDisponible(false);
         propiedadRepository.save(propiedad);

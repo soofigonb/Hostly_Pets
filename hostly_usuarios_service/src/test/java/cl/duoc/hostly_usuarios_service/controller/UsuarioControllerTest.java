@@ -27,13 +27,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.hamcrest.Matchers.hasSize;
 
+// Carga solo la capa web (Controlador) para pruebas más rápidas y aisladas
 @WebMvcTest(UsuarioController.class)
 public class UsuarioControllerTest {
 
     @Autowired
-    private MockMvc mockMvc;
+    private MockMvc mockMvc; // Utilizado para simular las peticiones HTTP REST
 
-    @MockitoBean
+    @MockitoBean // Crea un mock del servicio y lo inyecta en el controlador
     private UsuarioService usuarioService;
 
     private ObjectMapper objectMapper = new ObjectMapper();

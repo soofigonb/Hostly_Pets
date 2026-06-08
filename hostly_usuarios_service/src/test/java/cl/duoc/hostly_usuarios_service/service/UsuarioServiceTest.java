@@ -25,6 +25,7 @@ import cl.duoc.hostly_usuarios_service.exceptions.RecursoYaExisteException;
 import cl.duoc.hostly_usuarios_service.model.Usuario;
 import cl.duoc.hostly_usuarios_service.repository.UsuarioRepository;
 
+// Habilita el uso de anotaciones de Mockito (@Mock, @InjectMocks)
 @ExtendWith(MockitoExtension.class)
 public class UsuarioServiceTest {
 
@@ -36,7 +37,7 @@ public class UsuarioServiceTest {
     private UsuarioDTOMapper usuarioDTOMapper;
 
     // Servicio por probar
-    @InjectMocks
+    @InjectMocks // Inyecta los mocks definidos arriba en la instancia real del servicio
     private UsuarioService usuarioService;
 
     @Test
