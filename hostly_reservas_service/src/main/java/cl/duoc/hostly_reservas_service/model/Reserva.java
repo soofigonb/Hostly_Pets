@@ -33,4 +33,7 @@ public class Reserva {
     @JoinColumn(name = "id_estado_reserva") 
     private EstadoReserva estado;
 
+    @OneToOne(mappedBy = "reserva", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @com.fasterxml.jackson.annotation.JsonManagedReference
+    private DetalleReserva detalle;
 }

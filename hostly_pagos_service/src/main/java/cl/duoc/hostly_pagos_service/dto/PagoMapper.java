@@ -13,7 +13,11 @@ public class PagoMapper {
         dto.setId(pago.getId());
         dto.setIdReserva(pago.getIdReserva());
         dto.setMonto(pago.getMonto());
-        dto.setMetodoPago(pago.getMetodoPago());
+        
+        if (pago.getMetodoPago() != null) {
+            dto.setMetodoPago(pago.getMetodoPago().getNombre());
+        }
+        
         if (pago.getEstado() != null) {
             dto.setNombreEstado(pago.getEstado().getNombre());
         }
@@ -25,8 +29,9 @@ public class PagoMapper {
         Pago pago = new Pago();
         pago.setIdReserva(dto.getIdReserva());
         pago.setMonto(dto.getMonto());
-        pago.setMetodoPago(dto.getMetodoPago());
         pago.setFechaPago(LocalDateTime.now());
+        // El método de pago se asociará directamente en el Service usando JPA
         return pago;
     }
 }
+

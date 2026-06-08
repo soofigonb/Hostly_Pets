@@ -1,15 +1,15 @@
-package cl.duoc.hostly_reservas_service.exception;
+package cl.duoc.hostly_reservas_service.exceptions;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import java.util.HashMap;
 import java.util.Map;
 import java.time.LocalDateTime;
 
-@ControllerAdvice
+@RestControllerAdvice 
 public class GlobalExceptionHandler {
 
     // 1. Manejo de Errores de Validación 
@@ -31,16 +31,22 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(respuesta, HttpStatus.BAD_REQUEST);
     }
 
-    // 2. Manejo de Errores de Negocio (Fechas, lógica manual) 
+    // 2. Manejo de Recurso No Encontrado (404)
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> manejarNoEncontrado(ResourceNotFoundException ex) {
+        return crearRespuesta(ex.getMessage(), HttpStatus.NOT_FOUND);
+    }
+
+    // 3. Manejo de Errores de Negocio (Fechas, lógica manual) 
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, Object>> manejarRuntime(RuntimeException ex) {
         return crearRespuesta(ex.getMessage(), HttpStatus.BAD_REQUEST);
     }
 
-    // 3. Manejo de Errores inesperados 
+    // 4. Manejo de Errores inesperados 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> manejarCualquierError(Exception ex) {
-        return crearRespuesta("Ocurrió un error interno inesperado.", HttpStatus.INTERNAL_SERVER_ERROR);
+        return crearRespuesta("Ocurrió un error interno inesperado: " + ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     // Método auxiliar para formato JSON uniforme 

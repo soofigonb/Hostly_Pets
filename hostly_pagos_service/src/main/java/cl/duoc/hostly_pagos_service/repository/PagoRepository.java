@@ -13,4 +13,7 @@ public interface PagoRepository extends JpaRepository<Pago, Long> {
      * Spring Data JPA genera la consulta SQL automáticamente basándose en el nombre del método.
      */
     List<Pago> findByIdReserva(Long idReserva);
+
+    // Verifica si la reserva ya tiene un pago con un estado específico (ej. Completado)
+    boolean existsByIdReservaAndEstadoId(Long idReserva, Long estadoId);
 }
