@@ -1,0 +1,30 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      routes:
+        - id: hostly_usuarios_service
+          uri: lb://HOSTLY_USUARIOS_SERVICE
+          predicates:
+            - Path=/api/v1/usuarios/**
+        - id: hostly_propiedades_service
+          uri: lb://HOSTLY_PROPIEDADES_SERVICE
+          predicates:
+            - Path=/api/v1/propiedades/**
+        - id: hostly-reservas-service
+          uri: lb://HOSTLY-RESERVAS-SERVICE
+          predicates:
+            - Path=/api/v1/reservas/**
+        - id: hostly-pagos-service
+          uri: lb://HOSTLY-PAGOS-SERVICE
+          predicates:
+            - Path=/api/v1/pagos/**       
+    
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka

@@ -99,8 +99,8 @@ public class PropiedadController {
         // Convierte la entidad creada en ResponseDTO
         PropiedadResponseDTO response = crearResponse(propiedadCreada);
 
-        // Retorna respuesta HTTP 200 OK
-        return ResponseEntity.ok(response);
+        // Retorna respuesta HTTP 201 Created
+        return ResponseEntity.status(201).body(response);
     }
 
     // Endpoint PUT que actualiza una propiedad existente
@@ -125,7 +125,7 @@ public class PropiedadController {
 
     // Endpoint DELETE que elimina una propiedad según su ID
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> eliminarPropiedad(@PathVariable Long id) {
+    public ResponseEntity<Void> eliminarPropiedad(@PathVariable Long id) {
 
         // Log de advertencia porque se eliminará información
         logger.warn("Solicitud DELETE para eliminar propiedad con id {}", id);
@@ -133,8 +133,8 @@ public class PropiedadController {
         // Elimina la propiedad desde el service
         propiedadService.eliminarPropiedad(id);
 
-        // Retorna mensaje de éxito
-        return ResponseEntity.ok("Propiedad eliminada correctamente");
+        // Retorna HTTP 204 No Content
+        return ResponseEntity.noContent().build();
     }
 
     // Endpoint GET que busca propiedades según ciudad
