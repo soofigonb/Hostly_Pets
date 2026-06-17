@@ -4,12 +4,14 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDate;
 import lombok.Data;
 import jakarta.validation.constraints.*;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 @Schema(description = "Datos de una reserva de propiedad")
 @Data
 public class ReservaDTO {
 
     @Schema(description = "Identificador único de la reserva", example = "1")
+    @JsonProperty("idReservas")
     private Long id;
 
     @Schema(description = "ID del usuario que realiza la reserva", example = "5", requiredMode = Schema.RequiredMode.REQUIRED)

@@ -8,11 +8,11 @@ spring:
     gateway:
       routes:
         - id: hostly_usuarios_service
-          uri: lb://HOSTLY_USUARIOS_SERVICE
+          uri: lb://HOSTLY-USUARIOS-SERVICE
           predicates:
             - Path=/api/v1/usuarios/**
         - id: hostly_propiedades_service
-          uri: lb://HOSTLY_PROPIEDADES_SERVICE
+          uri: lb://HOSTLY-PROPIEDADES-SERVICE
           predicates:
             - Path=/api/v1/propiedades/**
         - id: hostly-reservas-service
