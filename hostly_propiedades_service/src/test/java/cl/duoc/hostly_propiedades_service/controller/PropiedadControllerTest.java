@@ -122,7 +122,7 @@ public class PropiedadControllerTest {
         mockMvc.perform(post("/api/v1/propiedades")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.titulo").value("Casa pet friendly"));
     }
 
@@ -155,7 +155,7 @@ public class PropiedadControllerTest {
         doNothing().when(propiedadService).eliminarPropiedad(1L);
 
         mockMvc.perform(delete("/api/v1/propiedades/{id}", 1L))
-                .andExpect(status().isOk());
+                .andExpect(status().isNoContent());
     }
 
     @Test
