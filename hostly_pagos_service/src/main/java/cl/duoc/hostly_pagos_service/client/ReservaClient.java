@@ -5,7 +5,7 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
-@FeignClient(name = "hostly-reservas-service", url = "http://localhost:8082/api/v1/reservas")
+@FeignClient(name = "hostly-reservas-service", url = "http://localhost:8080/api/v1/reservas")
 public interface ReservaClient {
 
     // Feign nos traerá la reserva completa con su precio real
