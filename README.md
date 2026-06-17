@@ -84,6 +84,7 @@ Gestiona:
 
 ## 📂 Estructura del Proyecto
 
+```bash
 Hostly_Pets/
 │
 ├── api-gateway
