@@ -20,6 +20,12 @@ El sistema permite:
 
 ## 🧩 Arquitectura de Microservicios
 
+### 🌐 api-gateway (Puerto: 8080)
+Punto de entrada único (API Gateway) que recibe y enruta todas las peticiones externas hacia los microservicios correspondientes.
+
+### 🧭 eureka-server (Puerto: 8761)
+Servidor de descubrimiento (Service Discovery) de Spring Cloud Netflix donde todos los microservicios se registran automáticamente.
+
 ### 👤 hostly-usuarios-service
 Gestiona:
 - Usuarios
@@ -57,6 +63,12 @@ Gestiona:
 - 🗄️ Spring Data JPA
 - ✅ Validation
 - ☁️ OpenFeign
+- 🌐 Spring Cloud Gateway
+- 🧭 Spring Cloud Netflix Eureka
+- 📖 SpringDoc OpenAPI (Swagger)
+
+### Infraestructura y Despliegue
+- 🐳 Docker & Docker Compose
 
 ### Base de Datos
 - 🐘 PostgreSQL
@@ -72,14 +84,16 @@ Gestiona:
 
 ## 📂 Estructura del Proyecto
 
-```bash
 Hostly_Pets/
 │
+├── api-gateway
+├── eureka-server
 ├── hostly-usuarios-service
 ├── hostly-propiedades-service
 ├── hostly-reservas-service
 ├── hostly-pagos-service
 │
+├── docker-compose.yml
 └── README.md
 ```
 
@@ -102,3 +116,27 @@ Para ver el reporte visual, abre en tu navegador:
 ```bash
 ./target/site/jacoco/index.html
 ```
+
+---
+
+## 🐳 Despliegue con Docker
+
+El proyecto completo está contenedorizado. Puedes levantar toda la infraestructura (API Gateway, Eureka y los 4 microservicios) con un solo comando:
+
+```bash
+docker compose up --build -d
+```
+
+> [!NOTE]
+> Al levantar Docker, los microservicios se conectan automáticamente a **Supabase** mediante el *Transaction Pooler* y se registran en **Eureka**.
+
+---
+
+## 📖 Documentación de APIs (Swagger)
+
+Todas las APIs están documentadas dinámicamente con OpenAPI 3. Una vez levantados los contenedores, puedes explorar los endpoints, probar llamadas y ver los esquemas DTO en:
+
+*   👤 **Usuarios:** [http://localhost:8081/doc/swagger-ui.html](http://localhost:8081/doc/swagger-ui.html)
+*   🏠 **Propiedades:** [http://localhost:8082/doc/swagger-ui.html](http://localhost:8082/doc/swagger-ui.html)
+*   📅 **Reservas:** [http://localhost:8083/doc/swagger-ui.html](http://localhost:8083/doc/swagger-ui.html)
+*   💳 **Pagos:** [http://localhost:8084/doc/swagger-ui.html](http://localhost:8084/doc/swagger-ui.html)
