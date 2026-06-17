@@ -1,16 +1,17 @@
 package cl.duoc.hostly_usuarios_service.controller;
 
-//Logger: permite registrar mensajes y eventos de la aplicación
 import org.slf4j.Logger;
-
-//LoggerFactory: crea instancias de Logger
 import org.slf4j.LoggerFactory;
-
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import cl.duoc.hostly_usuarios_service.dto.UsuarioDTO;
 import cl.duoc.hostly_usuarios_service.service.UsuarioService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -24,94 +25,100 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.PutMapping;
 
-//Define esta clase como controlador REST
+@Tag(name = "Usuarios", description = "Operaciones relacionadas con la gestión de usuarios")
 @RestController
-
-//Ruta base para los endpoints de usuarios
 @RequestMapping("/api/v1/usuarios")
-
-//Genera el constructor con dependencias final
 @RequiredArgsConstructor
 public class UsuarioController {
 
-    //Servicio con la lógica de usuarios
     private final UsuarioService usuarioService;
-
-    //Logger para registrar eventos del controlador
     private static final Logger logger = LoggerFactory.getLogger(UsuarioController.class);
 
-    //Endpoint GET para listar usuarios
+    @Operation(summary = "Listar todos los usuarios", description = "Obtiene una lista completa de todos los usuarios registrados")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Lista de usuarios obtenida exitosamente"),
+        @ApiResponse(responseCode = "500", description = "Error interno del servidor")
+    })
     @GetMapping
-    public ResponseEntity<List<UsuarioDTO>> obtenerTodosLosUsuarios()  {
-
-        //Registra la petición recibida
+    public ResponseEntity<List<UsuarioDTO>> obtenerTodosLosUsuarios() {
         logger.info("GET /api/v1/usuarios");
-
-        //Retorna la lista de usuarios
         return ResponseEntity.ok(usuarioService.obtenerTodosLosUsuarios());
     }
 
-    //Endpoint GET para buscar usuario por ID
+    @Operation(summary = "Buscar usuario por ID", description = "Obtiene la información completa de un usuario usando su identificador único")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Usuario encontrado"),
+        @ApiResponse(responseCode = "404", description = "Usuario no encontrado"),
+        @ApiResponse(responseCode = "500", description = "Error interno del servidor")
+    })
     @GetMapping("/{idUsuario}")
-    public ResponseEntity<UsuarioDTO> obtenerUsuarioPorId(@PathVariable Long idUsuario) {
-
-        //Registra la petición recibida
+    public ResponseEntity<UsuarioDTO> obtenerUsuarioPorId(
+            @Parameter(description = "ID único del usuario", example = "1", required = true)
+            @PathVariable Long idUsuario) {
         logger.info("GET /api/v1/usuarios/{}", idUsuario);
-
-        //Retorna el usuario encontrado
         return ResponseEntity.ok(usuarioService.obtenerUsuarioPorId(idUsuario));
     }
 
-    //Endpoint GET para buscar usuario por email
+    @Operation(summary = "Buscar usuario por email", description = "Obtiene la información de un usuario usando su dirección de correo electrónico")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Usuario encontrado"),
+        @ApiResponse(responseCode = "404", description = "Usuario no encontrado"),
+        @ApiResponse(responseCode = "500", description = "Error interno del servidor")
+    })
     @GetMapping("/email/{email}")
-    public ResponseEntity<UsuarioDTO> obtenerUsuarioPorEmail(@PathVariable String email) {
-
-        //Registra la petición recibida
+    public ResponseEntity<UsuarioDTO> obtenerUsuarioPorEmail(
+            @Parameter(description = "Email del usuario", example = "usuario@ejemplo.com", required = true)
+            @PathVariable String email) {
         logger.info("GET /api/v1/usuarios/email/{}", email);
-
-        //Retorna el usuario encontrado
         return ResponseEntity.ok(usuarioService.obtenerUsuarioPorEmail(email));
     }
 
-    //Endpoint POST para crear usuario
+    @Operation(summary = "Crear un usuario", description = "Registra un nuevo usuario en el sistema")
+    @ApiResponses({
+        @ApiResponse(responseCode = "201", description = "Usuario creado exitosamente"),
+        @ApiResponse(responseCode = "400", description = "Datos del usuario inválidos"),
+        @ApiResponse(responseCode = "409", description = "El email ya está registrado"),
+        @ApiResponse(responseCode = "500", description = "Error interno del servidor")
+    })
     @PostMapping
-    public ResponseEntity<UsuarioDTO> agregarUsuario(@Valid @RequestBody UsuarioDTO usuarioDTO) {
-
-        //Registra la petición recibida
+    public ResponseEntity<UsuarioDTO> agregarUsuario(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Datos del usuario a registrar", required = true)
+            @Valid @RequestBody UsuarioDTO usuarioDTO) {
         logger.info("POST /api/v1/usuarios - Registrando usuario");
-
-        //Crea el usuario usando el servicio
         UsuarioDTO usuarioCreado = usuarioService.agregarUsuario(usuarioDTO);
-
-        //Devuelve HTTP 201 Created con el usuario creado
         return ResponseEntity.status(201).body(usuarioCreado);
     }
 
-    //Endpoint PUT para actualizar usuario
+    @Operation(summary = "Actualizar un usuario", description = "Actualiza los datos de un usuario existente")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Usuario actualizado exitosamente"),
+        @ApiResponse(responseCode = "400", description = "Datos inválidos"),
+        @ApiResponse(responseCode = "404", description = "Usuario no encontrado"),
+        @ApiResponse(responseCode = "500", description = "Error interno del servidor")
+    })
     @PutMapping("/{idUsuario}")
-    public ResponseEntity<UsuarioDTO> actualizarUsuario(@PathVariable Long idUsuario, @Valid @RequestBody UsuarioDTO usuarioDTO) {
-        
-        //Registra la petición recibida
+    public ResponseEntity<UsuarioDTO> actualizarUsuario(
+            @Parameter(description = "ID del usuario a actualizar", example = "1", required = true)
+            @PathVariable Long idUsuario,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Datos actualizados del usuario", required = true)
+            @Valid @RequestBody UsuarioDTO usuarioDTO) {
         logger.info("PUT /api/v1/usuarios/{} - Actualizando usuario", idUsuario);
-
-        //Actualiza el usuario usando el servicio
         UsuarioDTO usuarioActualizado = usuarioService.actualizarUsuario(idUsuario, usuarioDTO);
-
-        //Devuelve HTTP 200 OK con el usuario actualizado
         return ResponseEntity.ok(usuarioActualizado);
     }
 
-    //Endpoint DELETE para eliminar usuario
+    @Operation(summary = "Eliminar un usuario", description = "Elimina un usuario del sistema según su ID")
+    @ApiResponses({
+        @ApiResponse(responseCode = "204", description = "Usuario eliminado exitosamente"),
+        @ApiResponse(responseCode = "404", description = "Usuario no encontrado"),
+        @ApiResponse(responseCode = "500", description = "Error interno del servidor")
+    })
     @DeleteMapping("/{idUsuario}")
-    public ResponseEntity<Void> eliminarUsuario(@PathVariable Long idUsuario){
-
-        //Registra la petición recibida
+    public ResponseEntity<Void> eliminarUsuario(
+            @Parameter(description = "ID del usuario a eliminar", example = "1", required = true)
+            @PathVariable Long idUsuario) {
         logger.info("DELETE /api/v1/usuarios/{}", idUsuario);
-
-        //Elimina el usuario usando el servicio
         usuarioService.eliminarUsuario(idUsuario);
-
-        //Devuelve HTTP 204 No Content
         return ResponseEntity.noContent().build();
     }
 }

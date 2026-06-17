@@ -1,0 +1,61 @@
+services:
+
+  ms-eureka:
+    build: ./eureka-server
+    container_name: ms-eureka
+    ports:
+      - "8761:8761"
+
+  ms-gateway:
+    build: ./api-gateway
+    container_name: ms-gateway
+    ports:
+      - "8080:8080"
+    depends_on:
+      - ms-eureka
+    environment:
+      - EUREKA_URL=http://ms-eureka:8761/eureka
+
+  ms-usuarios:
+    build: ./hostly_usuarios_service
+    container_name: ms-usuarios
+    ports:
+      - "8081:8081"
+    depends_on:
+      - ms-eureka
+    environment:
+      - EUREKA_URL=http://ms-eureka:8761/eureka
+
+  ms-propiedades:
+    build: ./hostly_propiedades_service
+    container_name: ms-propiedades
+    ports:
+      - "8082:8082"
+    depends_on:
+      - ms-eureka
+    environment:
+      - EUREKA_URL=http://ms-eureka:8761/eureka
+
+  ms-pagos:
+    build: ./hostly_pagos_service
+    container_name: ms-pagos
+    ports:
+      - "8084:8084"
+    depends_on:
+      - ms-eureka
+    environment:
+      - EUREKA_URL=http://ms-eureka:8761/eureka
+
+  ms-reservas:
+    build: ./hostly_reservas_service
+    container_name: ms-reservas
+    ports:
+      - "8083:8083"
+    depends_on:
+      - ms-eureka
+    environment:
+      - EUREKA_URL=http://ms-eureka:8761/eureka
+
+networks:
+  default:
+    name: microservicios-network

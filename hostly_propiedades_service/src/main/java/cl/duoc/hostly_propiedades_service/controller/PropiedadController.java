@@ -3,14 +3,9 @@ package cl.duoc.hostly_propiedades_service.controller;
 import java.util.List;
 import java.util.stream.Collectors;
 
-// Importamos Logger y LoggerFactory para generar logs del controlador
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-// ResponseEntity permite devolver respuestas HTTP personalizadas
 import org.springframework.http.ResponseEntity;
-
-// Importamos las anotaciones REST de Spring Boot
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -20,27 +15,21 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-// Importamos los DTO utilizados para recibir y devolver información
 import cl.duoc.hostly_propiedades_service.dto.PropiedadRequestDTO;
 import cl.duoc.hostly_propiedades_service.dto.PropiedadResponseDTO;
-
-// Importamos la entidad Propiedad
 import cl.duoc.hostly_propiedades_service.model.Propiedad;
-
-// Importamos el service que contiene la lógica de negocio
 import cl.duoc.hostly_propiedades_service.service.PropiedadService;
-
-// Lombok genera automáticamente el constructor con atributos final
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import jakarta.validation.Valid;
 
-// Indica que esta clase será un controlador REST
+@Tag(name = "Propiedades", description = "Operaciones relacionadas con la gestión de propiedades para mascotas")
 @RestController
-
-// Ruta base del controlador
 @RequestMapping("/api/v1/propiedades")
-
-// Genera constructor automático para inyección de dependencias
 @RequiredArgsConstructor
 public class PropiedadController {
 
@@ -51,7 +40,11 @@ public class PropiedadController {
     // Inyección del service de propiedades
     private final PropiedadService propiedadService;
 
-    // Endpoint GET que lista todas las propiedades registradas
+    @Operation(summary = "Listar todas las propiedades", description = "Obtiene todas las propiedades registradas en el sistema")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Lista de propiedades obtenida exitosamente"),
+        @ApiResponse(responseCode = "500", description = "Error interno del servidor")
+    })
     @GetMapping("")
     public ResponseEntity<List<PropiedadResponseDTO>> obtenerPropiedades() {
 
@@ -68,9 +61,16 @@ public class PropiedadController {
         return ResponseEntity.ok(response);
     }
 
-    // Endpoint GET que busca una propiedad por ID
+    @Operation(summary = "Buscar propiedad por ID", description = "Obtiene la información completa de una propiedad por su identificador")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Propiedad encontrada"),
+        @ApiResponse(responseCode = "404", description = "Propiedad no encontrada"),
+        @ApiResponse(responseCode = "500", description = "Error interno del servidor")
+    })
     @GetMapping("/{id}")
-    public ResponseEntity<PropiedadResponseDTO> obtenerPropiedadPorId(@PathVariable Long id) {
+    public ResponseEntity<PropiedadResponseDTO> obtenerPropiedadPorId(
+            @Parameter(description = "ID único de la propiedad", example = "1", required = true)
+            @PathVariable Long id) {
 
         // Log informativo
         logger.info("Solicitud GET para buscar propiedad con id {}", id);
@@ -85,9 +85,15 @@ public class PropiedadController {
         return ResponseEntity.ok(response);
     }
 
-    // Endpoint POST que crea una nueva propiedad
+    @Operation(summary = "Crear una propiedad", description = "Registra una nueva propiedad en el sistema")
+    @ApiResponses({
+        @ApiResponse(responseCode = "201", description = "Propiedad creada exitosamente"),
+        @ApiResponse(responseCode = "400", description = "Datos de la propiedad inválidos"),
+        @ApiResponse(responseCode = "500", description = "Error interno del servidor")
+    })
     @PostMapping("")
     public ResponseEntity<PropiedadResponseDTO> crearPropiedad(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Datos de la propiedad a crear", required = true)
             @Valid @RequestBody PropiedadRequestDTO propiedadDTO) {
 
         // Log informativo
@@ -103,10 +109,18 @@ public class PropiedadController {
         return ResponseEntity.status(201).body(response);
     }
 
-    // Endpoint PUT que actualiza una propiedad existente
+    @Operation(summary = "Actualizar una propiedad", description = "Actualiza los datos de una propiedad existente")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Propiedad actualizada exitosamente"),
+        @ApiResponse(responseCode = "400", description = "Datos inválidos"),
+        @ApiResponse(responseCode = "404", description = "Propiedad no encontrada"),
+        @ApiResponse(responseCode = "500", description = "Error interno del servidor")
+    })
     @PutMapping("/{id}")
     public ResponseEntity<PropiedadResponseDTO> actualizarPropiedad(
+            @Parameter(description = "ID de la propiedad a actualizar", example = "1", required = true)
             @PathVariable Long id,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Datos actualizados de la propiedad", required = true)
             @Valid @RequestBody PropiedadRequestDTO propiedadDTO) {
 
         // Log informativo
@@ -123,9 +137,16 @@ public class PropiedadController {
         return ResponseEntity.ok(response);
     }
 
-    // Endpoint DELETE que elimina una propiedad según su ID
+    @Operation(summary = "Eliminar una propiedad", description = "Elimina una propiedad del sistema según su ID")
+    @ApiResponses({
+        @ApiResponse(responseCode = "204", description = "Propiedad eliminada exitosamente"),
+        @ApiResponse(responseCode = "404", description = "Propiedad no encontrada"),
+        @ApiResponse(responseCode = "500", description = "Error interno del servidor")
+    })
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminarPropiedad(@PathVariable Long id) {
+    public ResponseEntity<Void> eliminarPropiedad(
+            @Parameter(description = "ID de la propiedad a eliminar", example = "1", required = true)
+            @PathVariable Long id) {
 
         // Log de advertencia porque se eliminará información
         logger.warn("Solicitud DELETE para eliminar propiedad con id {}", id);
@@ -137,10 +158,16 @@ public class PropiedadController {
         return ResponseEntity.noContent().build();
     }
 
-    // Endpoint GET que busca propiedades según ciudad
+    @Operation(summary = "Buscar propiedades por ciudad", description = "Obtiene todas las propiedades ubicadas en la ciudad indicada")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Propiedades encontradas"),
+        @ApiResponse(responseCode = "500", description = "Error interno del servidor")
+    })
     @GetMapping("/ciudad/{ciudad}")
     public ResponseEntity<List<PropiedadResponseDTO>>
-            obtenerPropiedadesPorCiudad(@PathVariable String ciudad) {
+            obtenerPropiedadesPorCiudad(
+            @Parameter(description = "Nombre de la ciudad", example = "Santiago", required = true)
+            @PathVariable String ciudad) {
 
         // Log informativo
         logger.info("Solicitud GET para buscar propiedades en ciudad {}", ciudad);
@@ -156,7 +183,11 @@ public class PropiedadController {
         return ResponseEntity.ok(response);
     }
 
-    // Endpoint GET que obtiene propiedades disponibles
+    @Operation(summary = "Listar propiedades disponibles", description = "Obtiene todas las propiedades que se encuentran disponibles para reserva")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Propiedades disponibles encontradas"),
+        @ApiResponse(responseCode = "500", description = "Error interno del servidor")
+    })
     @GetMapping("/disponibles")
     public ResponseEntity<List<PropiedadResponseDTO>>
             obtenerPropiedadesDisponibles() {
@@ -175,10 +206,16 @@ public class PropiedadController {
         return ResponseEntity.ok(response);
     }
 
-    // Endpoint GET que busca propiedades según anfitrión
+    @Operation(summary = "Buscar propiedades por anfitrión", description = "Obtiene todas las propiedades registradas por un anfitrión específico")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Propiedades encontradas"),
+        @ApiResponse(responseCode = "500", description = "Error interno del servidor")
+    })
     @GetMapping("/anfitrion/{idAnfitrion}")
     public ResponseEntity<List<PropiedadResponseDTO>>
-            obtenerPropiedadesPorAnfitrion(@PathVariable Long idAnfitrion) {
+            obtenerPropiedadesPorAnfitrion(
+            @Parameter(description = "ID del anfitrión", example = "5", required = true)
+            @PathVariable Long idAnfitrion) {
 
         // Log informativo
         logger.info("Solicitud GET para buscar propiedades del anfitrión {}", idAnfitrion);
