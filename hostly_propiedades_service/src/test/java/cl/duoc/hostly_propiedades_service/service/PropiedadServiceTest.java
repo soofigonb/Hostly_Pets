@@ -103,7 +103,7 @@ public class PropiedadServiceTest {
         usuario.setApellido("Pérez");
         usuario.setCorreo("carlos@test.com");
         usuario.setTelefono("+56912345678");
-        usuario.setRol("Anfitrión");
+        usuario.setRol("3");
         usuario.setEstado("Activo");
         return usuario;
     }

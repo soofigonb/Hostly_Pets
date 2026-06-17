@@ -90,8 +90,8 @@ public class PropiedadService {
             throw new IllegalArgumentException("Anfitrión no encontrado");
         }
 
-        if (usuario.getRol() == null || (!usuario.getRol().equalsIgnoreCase("Anfitrión") && !usuario.getRol().equalsIgnoreCase("Anfitrion"))) {
-            logger.error("El usuario {} no tiene rol de Anfitrión", usuario.getNombre());
+        if (usuario.getRol() == null || !usuario.getRol().equals("3")) {
+            logger.error("El usuario {} no tiene rol de Anfitrión (ID 3)", usuario.getNombre());
             throw new IllegalArgumentException("El usuario debe tener rol de Anfitrión para crear propiedades");
         }
 
@@ -161,8 +161,8 @@ public class PropiedadService {
             throw new IllegalArgumentException("Anfitrión no encontrado");
         }
 
-        if (usuario.getRol() == null || (!usuario.getRol().equalsIgnoreCase("Anfitrión") && !usuario.getRol().equalsIgnoreCase("Anfitrion"))) {
-            logger.error("El usuario {} no tiene rol de Anfitrión", usuario.getNombre());
+        if (usuario.getRol() == null || !usuario.getRol().equals("3")) {
+            logger.error("El usuario {} no tiene rol de Anfitrión (ID 3)", usuario.getNombre());
             throw new IllegalArgumentException("El usuario debe tener rol de Anfitrión para actualizar propiedades");
         }
 
