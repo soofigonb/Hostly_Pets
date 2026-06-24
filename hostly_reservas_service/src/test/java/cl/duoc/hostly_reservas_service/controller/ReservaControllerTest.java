@@ -53,7 +53,7 @@ public class ReservaControllerTest {
         mockMvc.perform(get("/api/v1/reservas"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].id").value(1L));
+                .andExpect(jsonPath("$[0].idReservas").value(1L));
     }
 
     @Test
@@ -70,7 +70,7 @@ public class ReservaControllerTest {
         // THEN
         mockMvc.perform(get("/api/v1/reservas/{id}", id))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(id))
+                .andExpect(jsonPath("$.idReservas").value(id))
                 .andExpect(jsonPath("$.idUsuario").value(10L));
     }
 
@@ -111,7 +111,7 @@ public class ReservaControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(bodyJson))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").value(1L))
+                .andExpect(jsonPath("$.idReservas").value(1L))
                 .andExpect(jsonPath("$.idUsuario").value(10L));
     }
 
@@ -152,7 +152,7 @@ public class ReservaControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(bodyJson))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(id));
+                .andExpect(jsonPath("$.idReservas").value(id));
     }
 
     @Test

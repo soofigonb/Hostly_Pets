@@ -158,6 +158,7 @@ public class PropiedadServiceTest {
         verify(propiedadRepository, atMostOnce()).findById(id);
     }
 
+    //Crear porpiedad
     @Test
     void givenPropiedadData_whenCrearPropiedad_thenReturnPropiedadGuardada() {
         PropiedadRequestDTO dto = buildRequestDTO();
